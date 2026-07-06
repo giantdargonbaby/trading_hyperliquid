@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "5m",
+  "strategy": "myquant-ma-cross",
+  "candles": 2017,
+  "start_time_utc": "2026-06-29T06:25:00+00:00",
+  "end_time_utc": "2026-07-06T06:25:00+00:00",
+  "initial_cash": 10000,
+  "final_equity": 6475.75877282,
+  "return_pct": -35.24241227,
+  "max_drawdown_pct": -36.15777031,
+  "trades": 274,
+  "total_fees": 1712.6155552,
+  "sharpe_per_bar": -0.08502754
+}

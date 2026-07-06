@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "BTC"
+  ],
+  "interval": "1m",
+  "strategy": "example-three-candle-momentum",
+  "candles": 1441,
+  "start_time_utc": "2026-07-05T04:16:00+00:00",
+  "end_time_utc": "2026-07-06T04:16:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 8332.4614819,
+  "return_pct": -16.67538518,
+  "max_drawdown_pct": -16.69243418,
+  "trades": 676,
+  "total_fees": 1785.8462507,
+  "sharpe_per_bar": -0.34915741
+}

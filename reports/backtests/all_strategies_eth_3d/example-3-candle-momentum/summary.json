@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "ETH"
+  ],
+  "interval": "1m",
+  "strategy": "example-3-candle-momentum",
+  "candles": 4321,
+  "start_time_utc": "2026-07-03T07:17:00+00:00",
+  "end_time_utc": "2026-07-06T07:17:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 5729.76603426,
+  "return_pct": -42.70233966,
+  "max_drawdown_pct": -42.70879876,
+  "trades": 2041,
+  "total_fees": 4541.43030839,
+  "sharpe_per_bar": -0.26328063
+}

@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1h",
+  "strategy": "buy-and-hold",
+  "candles": 169,
+  "start_time_utc": "2026-06-29T06:00:00+00:00",
+  "end_time_utc": "2026-07-06T06:00:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 11254.9579394,
+  "return_pct": 12.54957939,
+  "max_drawdown_pct": -7.84722487,
+  "trades": 1,
+  "total_fees": 4.0,
+  "sharpe_per_bar": 0.0903768
+}

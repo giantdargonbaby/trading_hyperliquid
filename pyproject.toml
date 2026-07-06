@@ -1,0 +1,18 @@
+[project]
+name = "hyperliquid-trade-store"
+version = "0.1.0"
+description = "Collect public Hyperliquid market data and store it in SQLite."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "hyperliquid-python-sdk==0.24.0",
+]
+
+[project.scripts]
+hyperliquid-trade-store = "hyperliquid_trade_store.cli:main"
+hyperliquid-kline-player = "hyperliquid_trade_store.visualize:main"
+hyperliquid-backtest = "hyperliquid_trade_store.backtest:main"
+hyperliquid-sweep = "hyperliquid_trade_store.sweep:main"
+
+[tool.setuptools.packages.find]
+include = ["hyperliquid_trade_store*"]

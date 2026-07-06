@@ -1,0 +1,9 @@
+{
+  "max_abs_weight": 1,
+  "volume_lookback": 21,
+  "spike_multiplier": 4.5,
+  "volume_drop_ratio": 0.2,
+  "pullback_tolerance_pct": 0.1,
+  "breakout_buffer_pct": 0,
+  "step_weight": 0.2
+}

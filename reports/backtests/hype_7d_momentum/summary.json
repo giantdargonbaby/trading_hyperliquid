@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1h",
+  "strategy": "momentum",
+  "candles": 169,
+  "start_time_utc": "2026-06-29T06:00:00+00:00",
+  "end_time_utc": "2026-07-06T06:00:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 10854.03263056,
+  "return_pct": 8.54032631,
+  "max_drawdown_pct": -2.44494768,
+  "trades": 8,
+  "total_fees": 20.59109377,
+  "sharpe_per_bar": 0.09932659
+}

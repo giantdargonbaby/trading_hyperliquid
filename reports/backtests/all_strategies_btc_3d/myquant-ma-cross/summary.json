@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "BTC"
+  ],
+  "interval": "1m",
+  "strategy": "myquant-ma-cross",
+  "candles": 4321,
+  "start_time_utc": "2026-07-03T07:17:00+00:00",
+  "end_time_utc": "2026-07-06T07:17:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 6537.20895039,
+  "return_pct": -34.6279105,
+  "max_drawdown_pct": -34.66280959,
+  "trades": 501,
+  "total_fees": 3269.07567999,
+  "sharpe_per_bar": -0.20340196
+}

@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1m",
+  "strategy": "example-3-candle-momentum",
+  "candles": 4321,
+  "start_time_utc": "2026-07-03T06:28:00+00:00",
+  "end_time_utc": "2026-07-06T06:28:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 5444.05706117,
+  "return_pct": -45.55942939,
+  "max_drawdown_pct": -45.55942939,
+  "trades": 2007,
+  "total_fees": 4393.33140298,
+  "sharpe_per_bar": -0.20669638
+}

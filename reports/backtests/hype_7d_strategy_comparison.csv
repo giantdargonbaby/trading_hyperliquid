@@ -1,0 +1,4 @@
+strategy,parameters,final_equity,return_pct,max_drawdown_pct,trades,total_fees,sharpe_per_bar
+buy-and-hold,"-",11254.9579394,12.54957939,-7.84722487,1,4.0,0.0903768
+sma-cross,"fast=20; slow=60",10299.41718121,2.99417181,-4.82266882,5,12.33028373,0.04527257
+momentum,"lookback=24; top_n=1",10854.03263056,8.54032631,-2.44494768,8,20.59109377,0.09932659

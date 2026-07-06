@@ -1,0 +1,3 @@
+strategy,final_equity,return_pct,max_drawdown_pct,trades,total_fees,sharpe_per_bar
+whale-volume-follow,9683.7799449,-3.16220055,-3.29858389,230,221.22194873,-0.04674584
+buy-and-hold benchmark,10330.25208908,3.30252089,-2.63881448,1,4.0,0.0258016

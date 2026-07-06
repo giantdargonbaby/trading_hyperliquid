@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "5m",
+  "strategy": "myquant-macd",
+  "candles": 2017,
+  "start_time_utc": "2026-06-29T06:25:00+00:00",
+  "end_time_utc": "2026-07-06T06:25:00+00:00",
+  "initial_cash": 10000,
+  "final_equity": 9862.13253223,
+  "return_pct": -1.37867468,
+  "max_drawdown_pct": -11.51467698,
+  "trades": 338,
+  "total_fees": 345.79655133,
+  "sharpe_per_bar": -0.00152114
+}

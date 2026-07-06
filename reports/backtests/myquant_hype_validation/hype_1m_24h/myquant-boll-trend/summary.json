@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1m",
+  "strategy": "myquant-boll-trend",
+  "candles": 1441,
+  "start_time_utc": "2026-07-05T06:28:00+00:00",
+  "end_time_utc": "2026-07-06T06:28:00+00:00",
+  "initial_cash": 10000,
+  "final_equity": 8865.16518064,
+  "return_pct": -11.34834819,
+  "max_drawdown_pct": -11.99788688,
+  "trades": 720,
+  "total_fees": 615.82325136,
+  "sharpe_per_bar": -0.09247761
+}

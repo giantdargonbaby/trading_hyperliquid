@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "5m",
+  "strategy": "myquant-turtle",
+  "candles": 2017,
+  "start_time_utc": "2026-06-29T06:25:00+00:00",
+  "end_time_utc": "2026-07-06T06:25:00+00:00",
+  "initial_cash": 10000,
+  "final_equity": 8595.36737891,
+  "return_pct": -14.04632621,
+  "max_drawdown_pct": -16.23726191,
+  "trades": 215,
+  "total_fees": 487.83356656,
+  "sharpe_per_bar": -0.03580911
+}

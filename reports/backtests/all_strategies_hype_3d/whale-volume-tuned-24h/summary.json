@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1m",
+  "strategy": "whale-volume-tuned-24h",
+  "candles": 4321,
+  "start_time_utc": "2026-07-03T06:28:00+00:00",
+  "end_time_utc": "2026-07-06T06:28:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 10083.70052351,
+  "return_pct": 0.83700524,
+  "max_drawdown_pct": -4.57230909,
+  "trades": 170,
+  "total_fees": 154.74401543,
+  "sharpe_per_bar": 0.00365347
+}

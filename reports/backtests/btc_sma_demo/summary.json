@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "BTC"
+  ],
+  "interval": "1m",
+  "strategy": "sma-cross",
+  "candles": 1441,
+  "start_time_utc": "2026-07-05T04:16:00+00:00",
+  "end_time_utc": "2026-07-06T04:16:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 9940.21264372,
+  "return_pct": -0.59787356,
+  "max_drawdown_pct": -1.57110581,
+  "trades": 38,
+  "total_fees": 99.41310617,
+  "sharpe_per_bar": -0.01334167
+}

@@ -1,0 +1,2 @@
+time_utc,time_ms,coin,side,quantity,price,notional,fee,cash_after
+2026-06-29T06:00:00+00:00,1782712800000,HYPE,buy,158.89914671158215,62.933,10000.0,4.0,-4.0

@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1m",
+  "strategy": "sma-cross-20-60",
+  "candles": 4321,
+  "start_time_utc": "2026-07-03T06:28:00+00:00",
+  "end_time_utc": "2026-07-06T06:28:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 9469.29907316,
+  "return_pct": -5.30700927,
+  "max_drawdown_pct": -9.36362017,
+  "trades": 128,
+  "total_fees": 331.55856583,
+  "sharpe_per_bar": -0.01812269
+}

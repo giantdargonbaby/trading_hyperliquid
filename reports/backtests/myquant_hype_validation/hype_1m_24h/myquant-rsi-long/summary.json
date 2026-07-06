@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1m",
+  "strategy": "myquant-rsi-long",
+  "candles": 1441,
+  "start_time_utc": "2026-07-05T06:28:00+00:00",
+  "end_time_utc": "2026-07-06T06:28:00+00:00",
+  "initial_cash": 10000,
+  "final_equity": 10079.94772885,
+  "return_pct": 0.79947729,
+  "max_drawdown_pct": -1.77909834,
+  "trades": 48,
+  "total_fees": 137.153883,
+  "sharpe_per_bar": 0.00878154
+}
