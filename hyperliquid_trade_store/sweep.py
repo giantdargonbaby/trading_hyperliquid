@@ -20,8 +20,14 @@ from hyperliquid_trade_store.backtest import (
     strategy_name,
     write_backtest_outputs,
 )
+from hyperliquid_trade_store.logging_utils import (
+    format_list,
+    format_params as format_log_params,
+    log_error,
+    log_info,
+)
 from hyperliquid_trade_store.storage import connect, init_db
-from hyperliquid_trade_store.time_utils import parse_time_ms
+from hyperliquid_trade_store.time_utils import ms_to_utc_iso, parse_time_ms
 
 
 SUMMARY_COLUMNS = [
@@ -55,7 +61,23 @@ def main(argv: list[str] | None = None) -> int:
     param_keys = ordered_unique([*fixed_params.keys(), *grid_keys])
     start_time_ms = parse_time_ms(args.start)
     end_time_ms = parse_time_ms(args.end)
+    log_info(
+        "input sweep "
+        f"db={args.db} network={args.network} coins={format_list(coins)} interval={args.interval} "
+        f"start={ms_to_utc_iso(start_time_ms)} end={ms_to_utc_iso(end_time_ms)} "
+        f"strategy={args.strategy} fixed_params={format_log_params(fixed_params)} "
+        f"sweep_params={format_log_params({key: 'grid' for key in grid_keys})} grid_runs={len(grid)}"
+    )
+    log_info(
+        "options sweep "
+        f"auto_fetch={args.auto_fetch} lookback_hours={args.lookback_hours} max_candles={args.max_candles} "
+        f"initial_cash={args.initial_cash} fee_bps={args.fee_bps} slippage_bps={args.slippage_bps} "
+        f"min_notional={args.min_notional} allow_short={args.allow_short} "
+        f"max_gross_exposure={args.max_gross_exposure} max_position_weight={args.max_position_weight} "
+        f"output_dir={args.output_dir} top={args.top}"
+    )
 
+    log_info(f"load local candles db={args.db}")
     conn = connect(args.db)
     try:
         init_db(conn)
@@ -68,11 +90,17 @@ def main(argv: list[str] | None = None) -> int:
             end_time_ms=end_time_ms,
             max_candles=args.max_candles,
         )
+        log_info(f"loaded aligned candles rows={len(aligned)}")
         if len(aligned) < 2 and args.auto_fetch:
             fetch_start_time_ms, fetch_end_time_ms = resolve_fetch_window(
                 start_time_ms=start_time_ms,
                 end_time_ms=end_time_ms,
                 lookback_hours=args.lookback_hours,
+            )
+            log_info(
+                "local candles insufficient; auto fetch "
+                f"coins={format_list(coins)} interval={args.interval} "
+                f"start={ms_to_utc_iso(fetch_start_time_ms)} end={ms_to_utc_iso(fetch_end_time_ms)}"
             )
             fetched = auto_fetch_market_candles(
                 conn,
@@ -83,7 +111,8 @@ def main(argv: list[str] | None = None) -> int:
                 end_time_ms=fetch_end_time_ms,
                 timeout=args.fetch_timeout,
             )
-            print("fetched candles: " + ", ".join(f"{coin}={count}" for coin, count in fetched.items()))
+            log_info("auto fetch output candles=" + ",".join(f"{coin}={count}" for coin, count in fetched.items()))
+            log_info("reload local candles after auto fetch")
             aligned = load_aligned_candles(
                 conn,
                 network=args.network,
@@ -93,16 +122,21 @@ def main(argv: list[str] | None = None) -> int:
                 end_time_ms=end_time_ms,
                 max_candles=args.max_candles,
             )
+            log_info(f"reloaded aligned candles rows={len(aligned)}")
     finally:
         conn.close()
 
     if len(aligned) < 2:
+        log_error(
+            "not enough aligned candles; collect more market_candles for the requested coins, interval, and time range"
+        )
         print(
             "not enough aligned candles. Collect more market_candles for the requested coins, interval, and time range.",
             file=sys.stderr,
         )
         return 1
 
+    log_info(f"run parameter sweep runs={len(grid)} candles={len(aligned)}")
     rows, best_result = run_parameter_sweep(
         aligned,
         coins=coins,
@@ -121,7 +155,16 @@ def main(argv: list[str] | None = None) -> int:
         interval=args.interval,
     )
 
+    log_info(
+        "write sweep outputs "
+        f"dir={args.output_dir} files=sweep_results.csv,sweep_results.json,sweep_report.md,best_params.json,best_run/"
+    )
     write_sweep_outputs(args.output_dir, rows, param_keys, best_result=best_result, top=args.top)
+    log_info(
+        "output sweep "
+        f"dir={args.output_dir} runs={len(rows)} best_return_pct={best_result['row']['return_pct']} "
+        f"best_params={format_log_params(best_result['params'])}"
+    )
     print_summary(rows, args.output_dir, args.top)
     return 0
 

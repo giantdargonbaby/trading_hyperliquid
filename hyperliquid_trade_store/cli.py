@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from hyperliquid_trade_store.collector import HyperliquidCollector
+from hyperliquid_trade_store.logging_utils import log_error, log_info
 from hyperliquid_trade_store.storage import (
     begin_run,
     connect,
@@ -19,7 +20,7 @@ from hyperliquid_trade_store.storage import (
     upsert_market_mids,
     upsert_market_trades,
 )
-from hyperliquid_trade_store.time_utils import parse_time_ms, utc_now_ms
+from hyperliquid_trade_store.time_utils import ms_to_utc_iso, parse_time_ms, utc_now_ms
 
 
 INTERVALS = ("1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "8h", "12h", "1d", "3d", "1w", "1M")
@@ -35,7 +36,20 @@ def main(argv: list[str] | None = None) -> int:
 
     end_time_ms = parse_time_ms(args.end) or utc_now_ms()
     start_time_ms = resolve_start_time(args, coin, end_time_ms)
+    log_info(
+        "input data_fetch "
+        f"db={args.db} network={args.network} coin={coin} interval={args.interval} "
+        f"start={ms_to_utc_iso(start_time_ms)} end={ms_to_utc_iso(end_time_ms)} "
+        f"incremental={args.incremental}"
+    )
+    log_info(
+        "options data_fetch "
+        f"skip_candles={args.skip_candles} skip_book={args.skip_book} "
+        f"skip_contexts={args.skip_contexts} stream_trades={args.stream_trades} "
+        f"duration_seconds={args.duration_seconds}"
+    )
 
+    log_info(f"open sqlite db={args.db}")
     conn = connect(args.db)
     init_db(conn)
 
@@ -46,13 +60,16 @@ def main(argv: list[str] | None = None) -> int:
         start_time_ms=start_time_ms,
         end_time_ms=end_time_ms,
     )
+    log_info(f"sync run started run_id={run_id}")
 
     try:
         collector = HyperliquidCollector(network=args.network, timeout=args.timeout, enable_ws=args.stream_trades)
         summary = collect_public_market_data(args, conn, collector, coin, start_time_ms, end_time_ms)
         finish_run(conn, run_id, status="success", message=str(summary))
+        log_info(f"sync run finished run_id={run_id} status=success")
     except Exception as error:  # noqa: BLE001 - CLI should record the failed sync run.
         finish_run(conn, run_id, status="failed", message=str(error))
+        log_error(f"sync run failed run_id={run_id} error={error}")
         print(f"sync failed: {error}", file=sys.stderr)
         return 1
     finally:
@@ -124,11 +141,14 @@ def collect_public_market_data(
     captured_at_ms = utc_now_ms()
 
     if not args.skip_contexts:
+        log_info("fetch rest all_mids")
         mids = collector.all_mids()
         summary["mids"] = upsert_market_mids(conn, network=args.network, mids=mids, captured_at_ms=captured_at_ms)
         insert_public_snapshot(conn, network=args.network, kind="all_mids", payload=mids, captured_at_ms=captured_at_ms)
         summary["public_snapshots"] += 1
+        log_info(f"stored rest all_mids rows={summary['mids']} snapshots=1")
 
+        log_info("fetch rest asset_contexts")
         contexts = collector.asset_contexts()
         summary["asset_contexts"] = upsert_asset_contexts(
             conn,
@@ -144,23 +164,42 @@ def collect_public_market_data(
             captured_at_ms=captured_at_ms,
         )
         summary["public_snapshots"] += 1
+        log_info(f"stored rest asset_contexts rows={summary['asset_contexts']} snapshots=1")
+    else:
+        log_info("skip rest contexts")
 
     if not args.skip_candles:
+        log_info(
+            "fetch rest candles "
+            f"coin={coin} interval={args.interval} start={ms_to_utc_iso(start_time_ms)} end={ms_to_utc_iso(end_time_ms)}"
+        )
         last_open_time = None
+        batch_count = 0
         for batch in collector.candle_batches(
             coin=coin,
             interval=args.interval,
             start_time_ms=start_time_ms,
             end_time_ms=end_time_ms,
         ):
-            summary["candles"] += upsert_market_candles(conn, network=args.network, candles=batch)
+            batch_count += 1
+            upserted = upsert_market_candles(conn, network=args.network, candles=batch)
+            summary["candles"] += upserted
             batch_last_open_time = max((int(candle["t"]) for candle in batch if candle.get("t") is not None), default=None)
             if batch_last_open_time is not None:
                 last_open_time = batch_last_open_time if last_open_time is None else max(last_open_time, batch_last_open_time)
+            log_info(
+                "stored candle batch "
+                f"batch={batch_count} rows={len(batch)} upserted={upserted} total={summary['candles']}"
+            )
         if last_open_time is not None:
             set_state(conn, candle_state_key(args.network, coin, args.interval), str(last_open_time))
+            log_info(f"updated candle cursor last_open_time={ms_to_utc_iso(last_open_time)}")
+        log_info(f"finished rest candles batches={batch_count} rows={summary['candles']}")
+    else:
+        log_info("skip rest candles")
 
     if not args.skip_book:
+        log_info(f"fetch rest l2_book coin={coin}")
         snapshot = collector.l2_book(coin=coin)
         summary["orderbook_levels"] = insert_orderbook_snapshot(
             conn,
@@ -168,10 +207,24 @@ def collect_public_market_data(
             coin=coin,
             snapshot=snapshot,
         )
+        log_info(f"stored rest l2_book levels={summary['orderbook_levels']}")
+    else:
+        log_info("skip rest l2_book")
 
     if args.stream_trades:
+        log_info(f"stream trades start coin={coin} duration_seconds={args.duration_seconds}")
+        batch_count = 0
         for batch in collector.stream_trade_batches(coin=coin, duration_seconds=args.duration_seconds):
-            summary["trades"] += upsert_market_trades(conn, network=args.network, trades=batch)
+            batch_count += 1
+            upserted = upsert_market_trades(conn, network=args.network, trades=batch)
+            summary["trades"] += upserted
+            log_info(
+                "stored trade batch "
+                f"batch={batch_count} rows={len(batch)} upserted={upserted} total={summary['trades']}"
+            )
+        log_info(f"stream trades finished batches={batch_count} rows={summary['trades']}")
+    else:
+        log_info("skip stream trades")
 
     return summary
 
@@ -181,6 +234,7 @@ def candle_state_key(network: str, coin: str, interval: str) -> str:
 
 
 def print_summary(db_path: Path, summary: dict[str, int]) -> None:
+    log_info(f"output sqlite db={db_path}")
     print(f"stored data in {db_path}")
     for key, value in summary.items():
         print(f"{key}: {value}")

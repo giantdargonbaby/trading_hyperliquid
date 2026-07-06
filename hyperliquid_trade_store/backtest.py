@@ -12,8 +12,15 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from hyperliquid_trade_store.collector import HyperliquidCollector
+from hyperliquid_trade_store.logging_utils import (
+    format_list,
+    format_params as format_log_params,
+    format_path,
+    log_error,
+    log_info,
+)
 from hyperliquid_trade_store.storage import begin_run, connect, finish_run, init_db, upsert_market_candles
-from hyperliquid_trade_store.time_utils import parse_time_ms, utc_now_ms
+from hyperliquid_trade_store.time_utils import ms_to_utc_iso, parse_time_ms, utc_now_ms
 
 
 @dataclass(frozen=True)
@@ -236,7 +243,21 @@ def main(argv: list[str] | None = None) -> int:
     strategy = load_strategy(args.strategy, params)
     start_time_ms = parse_time_ms(args.start)
     end_time_ms = parse_time_ms(args.end)
+    log_info(
+        "input backtest "
+        f"db={args.db} network={args.network} coins={format_list(coins)} interval={args.interval} "
+        f"start={ms_to_utc_iso(start_time_ms)} end={ms_to_utc_iso(end_time_ms)} "
+        f"strategy={args.strategy} params={format_log_params(params)}"
+    )
+    log_info(
+        "options backtest "
+        f"auto_fetch={args.auto_fetch} lookback_hours={args.lookback_hours} max_candles={args.max_candles} "
+        f"initial_cash={args.initial_cash} fee_bps={args.fee_bps} slippage_bps={args.slippage_bps} "
+        f"min_notional={args.min_notional} allow_short={args.allow_short} "
+        f"max_gross_exposure={args.max_gross_exposure} max_position_weight={args.max_position_weight}"
+    )
 
+    log_info(f"load local candles db={args.db}")
     conn = connect(args.db)
     try:
         init_db(conn)
@@ -249,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
             end_time_ms=end_time_ms,
             max_candles=args.max_candles,
         )
+        log_info(f"loaded aligned candles rows={len(aligned)}")
 
         if len(aligned) < 2 and args.auto_fetch:
             fetch_start_time_ms, fetch_end_time_ms = resolve_fetch_window(
@@ -256,10 +278,10 @@ def main(argv: list[str] | None = None) -> int:
                 end_time_ms=end_time_ms,
                 lookback_hours=args.lookback_hours,
             )
-            print(
-                "not enough local candles; fetching "
-                f"{','.join(coins)} {args.interval} candles "
-                f"from {fetch_start_time_ms} to {fetch_end_time_ms}"
+            log_info(
+                "local candles insufficient; auto fetch "
+                f"coins={format_list(coins)} interval={args.interval} "
+                f"start={ms_to_utc_iso(fetch_start_time_ms)} end={ms_to_utc_iso(fetch_end_time_ms)}"
             )
             fetched = auto_fetch_market_candles(
                 conn,
@@ -270,7 +292,8 @@ def main(argv: list[str] | None = None) -> int:
                 end_time_ms=fetch_end_time_ms,
                 timeout=args.fetch_timeout,
             )
-            print("fetched candles: " + ", ".join(f"{coin}={count}" for coin, count in fetched.items()))
+            log_info("auto fetch output candles=" + ",".join(f"{coin}={count}" for coin, count in fetched.items()))
+            log_info("reload local candles after auto fetch")
             aligned = load_aligned_candles(
                 conn,
                 network=args.network,
@@ -280,16 +303,22 @@ def main(argv: list[str] | None = None) -> int:
                 end_time_ms=end_time_ms,
                 max_candles=args.max_candles,
             )
+            log_info(f"reloaded aligned candles rows={len(aligned)}")
     finally:
         conn.close()
 
     if len(aligned) < 2:
+        log_error(
+            "not enough aligned candles; collect more market_candles for the requested coins, interval, and time range"
+        )
         print(
             "not enough aligned candles. Collect more market_candles for the requested coins, interval, and time range.",
             file=sys.stderr,
         )
         return 1
 
+    resolved_strategy_name = strategy_name(strategy)
+    log_info(f"run backtest strategy={resolved_strategy_name} candles={len(aligned)}")
     result = run_backtest(
         aligned,
         coins=coins,
@@ -301,25 +330,35 @@ def main(argv: list[str] | None = None) -> int:
         allow_short=args.allow_short,
         max_gross_exposure=args.max_gross_exposure,
         max_position_weight=args.max_position_weight,
-        strategy_name=strategy_name(strategy),
+        strategy_name=resolved_strategy_name,
         network=args.network,
         interval=args.interval,
     )
 
-    output_dir = args.output_dir or default_output_dir(args.network, coins, args.interval, strategy_name(strategy))
+    output_dir = args.output_dir or default_output_dir(args.network, coins, args.interval, resolved_strategy_name)
+    log_info(f"write backtest outputs dir={output_dir} files=summary.json,equity_curve.csv,trades.csv")
     write_backtest_outputs(output_dir, result)
+    log_info(
+        "output backtest "
+        f"dir={output_dir} final_equity={result['summary']['final_equity']} "
+        f"return_pct={result['summary']['return_pct']} trades={result['summary']['trades']}"
+    )
     print_summary(result["summary"], output_dir)
 
     if args.write_baseline:
+        log_info(f"write baseline output={args.write_baseline}")
         write_baseline(args.write_baseline, result["summary"])
         print(f"wrote baseline {args.write_baseline}")
 
     if args.baseline:
+        log_info(f"compare baseline input={args.baseline} tolerance_pct={args.tolerance_pct}")
         ok, messages = compare_baseline(args.baseline, result["summary"], tolerance_pct=args.tolerance_pct)
         for message in messages:
             print(message)
         if not ok:
+            log_error("baseline check failed")
             return 2
+        log_info("baseline check passed")
 
     return 0
 
@@ -447,6 +486,11 @@ def auto_fetch_market_candles(
     collector = collector or HyperliquidCollector(network=network, timeout=timeout)
     fetched: dict[str, int] = {}
     for coin in coins:
+        log_info(
+            "auto fetch candles start "
+            f"coin={coin} network={network} interval={interval} "
+            f"start={ms_to_utc_iso(start_time_ms)} end={ms_to_utc_iso(end_time_ms)}"
+        )
         run_id = begin_run(
             conn,
             network=network,
@@ -462,11 +506,15 @@ def auto_fetch_market_candles(
                 start_time_ms=start_time_ms,
                 end_time_ms=end_time_ms,
             ):
-                total += upsert_market_candles(conn, network=network, candles=batch)
+                upserted = upsert_market_candles(conn, network=network, candles=batch)
+                total += upserted
+                log_info(f"auto fetch candle batch coin={coin} rows={len(batch)} upserted={upserted} total={total}")
             fetched[coin] = total
             finish_run(conn, run_id, status="success", message=f"candles={total}")
+            log_info(f"auto fetch candles finished coin={coin} rows={total}")
         except Exception as error:
             finish_run(conn, run_id, status="failed", message=str(error))
+            log_error(f"auto fetch candles failed coin={coin} error={error}")
             raise
     return fetched
 
@@ -784,6 +832,7 @@ def stable_metrics(summary: dict[str, Any]) -> dict[str, Any]:
 
 
 def print_summary(summary: dict[str, Any], output_dir: Path) -> None:
+    log_info(f"output summary dir={format_path(output_dir)}")
     print(f"output: {output_dir}")
     print(f"coins: {','.join(summary['coins'])}")
     print(f"strategy: {summary['strategy']}")

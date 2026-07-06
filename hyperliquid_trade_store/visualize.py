@@ -8,8 +8,9 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from hyperliquid_trade_store.logging_utils import log_info
 from hyperliquid_trade_store.storage import connect
-from hyperliquid_trade_store.time_utils import parse_time_ms
+from hyperliquid_trade_store.time_utils import ms_to_utc_iso, parse_time_ms
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,6 +23,13 @@ def main(argv: list[str] | None = None) -> int:
     if not coin:
         parser.error("--coin cannot be empty")
 
+    log_info(
+        "input visualize "
+        f"db={args.db} network={args.network} coin={coin} interval={args.interval} "
+        f"start={ms_to_utc_iso(start_time_ms)} end={ms_to_utc_iso(end_time_ms)} "
+        f"max_candles={args.max_candles} initial_window={args.initial_window}"
+    )
+    log_info(f"load candles from sqlite db={args.db}")
     conn = connect(args.db)
     try:
         candles = load_candles(
@@ -35,8 +43,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     finally:
         conn.close()
+    log_info(f"loaded candles rows={len(candles)}")
 
     output = args.output or default_output_path(args.network, coin, args.interval)
+    log_info(f"write kline player html={output}")
     write_player_html(
         output,
         network=args.network,
@@ -48,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
         initial_window=args.initial_window,
     )
 
+    log_info(f"output html={output} candles={len(candles)}")
     print(f"wrote {output}")
     print(f"candles: {len(candles)}")
     return 0

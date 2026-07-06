@@ -178,6 +178,41 @@ python -m hyperliquid_trade_store \
 | `--output-dir` | 默认 `reports/backtests/parameter_sweep` | 扫参输出目录。 |
 | `--top` | 默认 `20` | 在 stdout 和 `sweep_report.md` 中展示排名前多少的组合。 |
 
+## 运行日志和输入输出提示
+
+所有 CLI 都会把运行过程日志写到 `stderr`，格式为：
+
+```text
+2026-07-06T08:00:00Z INFO input backtest db=data/hyperliquid.sqlite ...
+```
+
+原有命令结果摘要仍输出到 `stdout`，方便脚本继续读取；日志只用于人工观察输入、过程和输出位置。
+
+数据拉取 `hyperliquid-trade-store` 会提示：
+
+- 输入：`db`、`network`、`coin`、`interval`、`start`、`end`、是否使用增量游标。
+- 过程：是否跳过 K 线、盘口、上下文；REST 拉取 `all_mids`、`asset_contexts`、`candles`、`l2_book` 的进度。
+- 实时拉取：开启 `--stream-trades` 时，会提示 websocket 订阅开始、每个成交批次写入数量和结束汇总。
+- 输出：SQLite 数据库路径，以及 mids、asset contexts、candles、orderbook levels、trades 等写入数量。
+
+可视化生成 `hyperliquid-kline-player` 会提示：
+
+- 输入：读取的 `db`、`network`、`coin`、`interval`、时间范围、`max_candles` 和初始窗口大小。
+- 过程：从本地 `market_candles` 加载了多少根 K 线。
+- 输出：生成的 HTML 路径和嵌入的 K 线数量。
+
+策略回测 `hyperliquid-backtest` 会提示：
+
+- 输入：`db`、`network`、交易对、周期、时间范围、策略名、策略参数和手续费/滑点/风控参数。
+- 过程：本地对齐 K 线数量；本地数据不足时，自动补数据的时间范围、币种和每批写入数量。
+- 输出：回测输出目录，以及 `summary.json`、`equity_curve.csv`、`trades.csv` 的生成位置；如使用 baseline，也会提示写入或比对结果。
+
+参数扫参 `hyperliquid-sweep` 会提示：
+
+- 输入：固定参数、扫参网格参数、总运行次数、数据范围和交易成本参数。
+- 过程：本地 K 线加载、必要时自动补数据、扫参运行数量。
+- 输出：`sweep_results.csv`、`sweep_results.json`、`sweep_report.md`、`best_params.json` 和 `best_run/` 输出目录。
+
 ## 查询数据
 
 查看最近 10 根 K 线：
