@@ -23,7 +23,7 @@ from strategies.myquant_classic_strategies import (
     MyquantRsiStrategy,
     MyquantTurtleStrategy,
 )
-from strategies.whale_volume_strategy import WhaleVolumeStrategy
+from strategies.whale_volume_strategy import WhaleMarketMakerStrategyV2, WhaleVolumeStrategy
 
 
 StrategyFactory = Callable[[], object]
@@ -35,6 +35,25 @@ STRATEGY_SPECS: list[tuple[str, StrategyFactory, bool, dict]] = [
     ("momentum-120", lambda: MomentumStrategy(lookback=120, top_n=1), False, {"lookback": 120, "top_n": 1}),
     ("example-3-candle-momentum", lambda: ExampleStrategy(lookback=3), False, {"lookback": 3}),
     ("whale-volume-default", lambda: WhaleVolumeStrategy(), True, {}),
+    (
+        "whale-market-maker-v2",
+        lambda: WhaleMarketMakerStrategyV2(),
+        True,
+        {
+            "volume_lookback": 3,
+            "spike_multiplier": 3,
+            "exit_volume_ratio": 0.5,
+            "exit_bars": 3,
+            "step_weight": 0.05,
+            "max_abs_weight": 0.3,
+            "min_price_move_pct": 0.05,
+            "cooldown_bars": 5,
+            "max_hold_bars": 120,
+            "stop_loss_pct": 0.4,
+            "take_profit_pct": 0.6,
+            "max_trades_per_day": 80,
+        },
+    ),
     (
         "whale-volume-tuned-24h",
         lambda: WhaleVolumeStrategy(

@@ -1,0 +1,18 @@
+{
+  "network": "mainnet",
+  "coins": [
+    "HYPE"
+  ],
+  "interval": "1m",
+  "strategy": "whale-market-maker-v2",
+  "candles": 1441,
+  "start_time_utc": "2026-07-05T06:28:00+00:00",
+  "end_time_utc": "2026-07-06T06:28:00+00:00",
+  "initial_cash": 10000.0,
+  "final_equity": 10006.89988306,
+  "return_pct": 0.06899883,
+  "max_drawdown_pct": -0.13193336,
+  "trades": 49,
+  "total_fees": 6.71476282,
+  "sharpe_per_bar": 0.0158627
+}

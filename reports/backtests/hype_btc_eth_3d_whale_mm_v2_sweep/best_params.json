@@ -1,0 +1,8 @@
+{
+  "volume_lookback": 13,
+  "spike_multiplier": 4,
+  "exit_volume_ratio": 0.4,
+  "exit_bars": 3,
+  "step_weight": 0.08,
+  "max_abs_weight": 0.15
+}

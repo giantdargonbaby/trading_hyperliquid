@@ -374,6 +374,41 @@ python -m hyperliquid_trade_store.backtest \
 - `step_weight`：每次加仓/反手的目标仓位比例，例如 `0.2` 表示 20%
 - `max_abs_weight`：策略自身允许的最大绝对仓位，`1` 表示满仓
 
+鲸鱼做市商策略 V2 示例：
+
+```bash
+python -m hyperliquid_trade_store.backtest \
+  --db data/hyperliquid.sqlite \
+  --coin HYPE \
+  --interval 1m \
+  --strategy strategies/whale_volume_strategy.py:WhaleMarketMakerStrategyV2 \
+  --param volume_lookback=3 \
+  --param spike_multiplier=3 \
+  --param exit_volume_ratio=0.5 \
+  --param exit_bars=3 \
+  --param step_weight=0.05 \
+  --param max_abs_weight=0.3 \
+  --param min_price_move_pct=0.05 \
+  --param cooldown_bars=5 \
+  --param max_hold_bars=120 \
+  --param stop_loss_pct=0.4 \
+  --param take_profit_pct=0.6 \
+  --param max_trades_per_day=80 \
+  --allow-short \
+  --max-position-weight 0.3 \
+  --max-gross-exposure 0.3
+```
+
+V2 运行逻辑：
+
+- 鲸鱼入场：当前 K 线成交量大于前 `volume_lookback` 根 K 线均量的 `spike_multiplier` 倍时，只进入观察状态，不立即开仓。
+- 鲸鱼混战：后续 K 线成交量不低于入场 K 线成交量的 `exit_volume_ratio`，但收盘价没有高于前一根 K 线收盘价时，不操作。
+- 鲸鱼离场：后续 K 线成交量低于入场 K 线成交量的 `exit_volume_ratio`，且连续达到 `exit_bars` 根，判断做市商进场。
+- 做市商反向：做市商进场时如果价格上涨幅度达到 `min_price_move_pct`，开反向空仓 `step_weight`；如果后续 K 线继续上涨且通过冷却检查，继续每次加空 `step_weight`，直到 `max_abs_weight` 后不再加仓。
+- 下跌场景按同样逻辑对称处理：连续下跌时开反向多仓并逐步加多。
+- 降频控制：每次调仓后至少等待 `cooldown_bars` 根 K 线，每天最多 `max_trades_per_day` 次调仓。
+- 退出风控：持仓超过 `max_hold_bars` 根 K 线、亏损达到 `stop_loss_pct`，或盈利达到 `take_profit_pct` 时平仓。
+
 批量扫参：
 
 ```bash
